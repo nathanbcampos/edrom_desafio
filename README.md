@@ -1,68 +1,106 @@
 # Desafio Individual EDROM - Robô A*
 
-Olá, candidato(a)!
-
-Seja bem-vindo(a) ao desafio individual para a equipe de Robótica da EDROM. Este desafio foi projetado para avaliar suas habilidades de resolução de problemas, sua lógica de programação e seu conhecimento em algoritmos fundamentais para a robótica.
-
-Caso tenha dúvidas sobre qualquer coisa, envie uma mensagem em algum dos seguintes canais:
-- E-mail: pedrohperescode@gmail.com
-- E-mail: victorvasconcelos676@gmail.com
-- Grupo do Whatsapp
 
 
-## O Desafio
+# 1.Introdução do Problema
 
-O seu objetivo é programar a "inteligência" de um robô de futebol para que ele navegue em um campo 2D. A tarefa consiste em duas fases:
-1.  Levar o robô de sua posição inicial até a bola, desviando de robôs adversários.
-2.  Após capturar a bola, levá-la até o gol adversário para marcar o ponto da vitória.
+Este projeto apresenta uma solução para o desafio de pathfinding (busca de caminho) proposto pela Edrom. O objetivo é desenvolver uma função encontrar_caminho em Python que guie um robô de forma autônoma em um campo 2D representado por um grid.
 
-O caminho encontrado deve ser **ótimo**, não apenas em distância, mas considerando diversas outras variáveis de custo que simulam um ambiente de jogo real.
+Levando em conta os seguintes pontos:
 
-## Estrutura dos Arquivos
+* Encontrar o melhor caminho até o objetivo.
+* Utilizar diferentes comportamentos levando em conta o custo da movimentação, posse de bola e proximidade dos adversários.
 
-Você recebeu uma pasta com dois arquivos de código principais. Aqui está um resumo do que cada um faz:
+# 2.Abordagem da solução
 
-### 📄 `simulador.py` (O Simulador)
+Foi utilizado o algoritmo basedo no algoritmo A* para a resolução do desafio:
 
-Este arquivo é o ambiente de simulação. Ele é responsável por:
--   Criar a janela do jogo e desenhar o campo, o robô, a bola e os obstáculos.
--   Gerenciar o loop principal do jogo e a interface (botões de Play/Reset).
--   Chamar a sua função no arquivo `candidato.py` para obter o caminho que o robô deve seguir.
+    f = g + h
 
-**Importante:** Você não precisa (e não deve) editar este arquivo. Ele serve apenas como a plataforma para testar e visualizar o seu algoritmo.
+onde:
+* `g` representa o custo real desde o início até o nó atual.
+* `h` representa o custo estimado do nó atual até a meta.
 
-### 👨‍💻 `candidato.py` (Sua Área de Trabalho)
+De início é necessário estabelecer o loop principal e os possíveis movimentos do robô:
 
-**Este é o único arquivo que você deve editar.** Ele contém uma única função principal: `encontrar_caminho()`.
+```python
+while (x_atual, y_atual) != (x_objetivo, y_objetivo):
+    mov_posiveis = [
+            (1, 0), (-1, 0), #Direção Horizontal
+            (0, 1), (0, -1), #Direção Vertical
+            (1, 1), (-1, -1), #Diagonal
+            (1, -1), (-1, 1)  #Diagonal
+        ]
+```
 
-É dentro desta função que toda a sua lógica deve ser implementada. O arquivo já vem com uma documentação detalhada (`docstring`) explicando cada parâmetro da função e os requisitos do desafio em 3 níveis de complexidade.
+Inicialização de varíaveis auxiliares:
+```python
+melhor_f = float('inf') #Garante que o primeiro movimento sempre seja o melhor
+melhor_passo = None
+```
+E para cada possível movimento será estabelecido o novo movimento, suas limitações e o custo do movimento:
 
-## Como Começar
+```python
+for dx, dy in mov_posiveis:
+    nx, ny = x_atual + dx, y_atual + dy 
 
-1.  **Instale as dependências:** Certifique-se de que você tem Python e a biblioteca Pygame instalados.
-    ```bash
-    pip install pygame
-    ```
-2.  **Execute o simulador:** Abra um terminal na pasta do projeto e execute o comando:
-    ```bash
-    python simulador.py
-    ```
-3.  **Observe o comportamento inicial:** Ao rodar pela primeira vez, você verá um robô azul que apenas se move para frente, ignorando todo o resto. Este é o comportamento do código de exemplo.
+    if not (0 <= nx < largura_grid and 0 <= ny < altura_grid):
+        continue
 
-## Seu Objetivo
+    if (nx, ny) in obstaculos: # Evita os obstaculos
+        continue
 
-Sua meta é substituir o código de exemplo em `candidato.py` por uma implementação completa do algoritmo A* que atenda aos seguintes critérios, que representam os níveis de avaliação do desafio:
+    g = math.hypot(dx, dy)
+    penalidade = 0
+```
+e para a implementação das penalidades:
 
--   **Nível 1: Custo de Rotação:** O algoritmo deve penalizar movimentos que exijam que o robô mude de direção. Caminhos mais "suaves" devem ser preferidos.
+```python
+if direcao_anterior != (0,0):
+    if  (dx, dy) == (-direcao_anterior[0], -direcao_anterior[1]): #Inversao completa de direcao 180 graus
+        penalidade = penalidade + 2
 
--   **Nível 2: Custo por Estado:** O robô deve ser mais "cuidadoso" ao se mover com a bola. As penalidades, especialmente as de rotação, devem ser maiores quando ele está com a posse de bola (`tem_bola=True`).
 
--   **Nível 3: Zonas de Perigo:** O algoritmo deve tratar as células próximas aos adversários como "caras", preferindo contorná-las a passar por perto, a menos que seja a única opção viável.
+    elif (abs(dx) + abs(dy) == 2) and (abs(direcao_anterior[0]) + abs(direcao_anterior[1] == 1)): # Mudança de direção de movimento reto para diagonal
+        penalidade = penalidade + 1
+    
+    elif (abs(dx) + abs(dy) == 1) and (abs(direcao_anterior[0]) + abs(direcao_anterior[1] == 1)) and (dx != direcao_anterior[0] or dy != direcao_anterior[1]) :
+        penalidade = penalidade + 3
 
-Leia atentamente a documentação dentro da função `encontrar_caminho` para mais detalhes sobre cada nível.
+    if tem_bola == True:
+        penalidade = penalidade*2
+```
 
----
+Calculo final do custo:
 
-Boa sorte! Estamos ansiosos para ver sua solução.
+```python
+g = g + penalidade # Soma a penalidade
+h = math.hypot(x_objetivo - nx, y_objetivo - ny) #Distancia até o objetivo
+f = g + h #Algoritmo A*
+```
 
-**Equipe EDROM**
+Para a atualização do melhor passo:
+
+```python
+ if f < melhor_f:
+    melhor_f = f
+    melhor_passo = (nx, ny)
+    nova_direcao = (dx, dy)
+```
+
+Assim para finalizar a implementação o seguinte trecho para atualizar a posição:
+
+```python
+direcao_anterior = nova_direcao
+if melhor_passo is None:
+    return []
+
+x_atual, y_atual = melhor_passo
+caminho.append(melhor_passo)
+```
+
+# 3.Conclusão
+
+Respeitando a proposta do desafio, este foi a forma mais eficiente que encontrei para a resolução do problema. Assim , tendo como características a modularidade e a simplicidade, considerando a possibilidade de novas abordagens e outras estratégias com aplicações reais em simulação.
+
+Desenvolvido por Nathan Bernardes Campos
