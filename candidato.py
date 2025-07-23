@@ -105,6 +105,14 @@ def encontrar_caminho(pos_inicial, pos_objetivo, obstaculos, largura_grid, altur
                 if tem_bola == True:
                     penalidade = penalidade*2
 
+             #Pegar posição x e y de todos os obstáculos
+            for x_obstaculos, y_obstaculos in obstaculos:
+                dif_x = nx - x_obstaculos
+                dif_y = ny - y_obstaculos 
+                #se a distancia entre o robô e o obstáculo for menor ou igual à raiz de 2 (menor distancia possível entre o robo e o obstaculo) entao sera aplicado outra penalidade
+                if math.hypot(dif_x, dif_y) <= math.sqrt(2):
+                    penalidade = penalidade + 3
+
             g = g + penalidade # Soma a penalidade
             h = math.hypot(x_objetivo - nx, y_objetivo - ny) #Distancia até o objetivo
             f = g + h #Algoritmo A*
