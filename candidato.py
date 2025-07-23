@@ -1,8 +1,9 @@
-# NOME DO CANDIDATO: [O candidato deve preencher aqui]
-# CURSO DO CANDIDATO: [Curso]
-# AREAS DE INTERESSE: [Digite Aqui]
+# NOME DO CANDIDATO: Nathan Bernardes Campos
+# CURSO DO CANDIDATO: Engenharia Mecatrônica
+# AREAS DE INTERESSE: Behavior e elétrica
 
 # Você pode importar as bibliotecas que julgar necessárias.
+import math
 
 def encontrar_caminho(pos_inicial, pos_objetivo, obstaculos, largura_grid, altura_grid, tem_bola=False):
     """
@@ -59,26 +60,89 @@ def encontrar_caminho(pos_inicial, pos_objetivo, obstaculos, largura_grid, altur
     #             >>>  IMPLEMENTAÇÃO DO CANDIDATO   <<<        #
     #                                                          #
     # -------------------------------------------------------- #
+    x_atual, y_atual = pos_inicial
+    x_objetivo, y_objetivo = pos_objetivo
+    direcao_anterior  = (0,0)   #Inicializa direcao (x = 0, y = 0)
+    
+
+    caminho = []
+
+    #Enquanto as posições forem diferentes calcula melhor passo
+    while (x_atual, y_atual) != (x_objetivo, y_objetivo):
+        mov_posiveis = [
+            (1, 0), (-1, 0), #Direção Horizontal
+            (0, 1), (0, -1), #Direção Vertical
+            (1, 1), (-1, -1), #Diagonal
+            (1, -1), (-1, 1)  #Diagonal
+        ]
+
+        melhor_f = float('inf') #Garante que o primeiro movimento sempre seja o melhor
+        melhor_passo = None
+
+        for dx, dy in mov_posiveis:
+            nx, ny = x_atual + dx, y_atual + dy 
+
+            if not (0 <= nx < largura_grid and 0 <= ny < altura_grid):
+                continue
+
+            if (nx, ny) in obstaculos: # Evita os obstaculos
+                continue
+
+            g = math.hypot(dx, dy) #Custo do movimento
+            penalidade = 0
+
+            if direcao_anterior != (0,0):
+                if  (dx, dy) == (-direcao_anterior[0], -direcao_anterior[1]): #Inversao completa de direcao 180 graus
+                    penalidade = penalidade + 2
+
+                #Se dx + dy == 2 movimento diagonal se a soma de dx + dy = 1 movimento é reto
+                elif (abs(dx) + abs(dy) == 2) and (abs(direcao_anterior[0]) + abs(direcao_anterior[1] == 1)): # Mudança de direção de movimento reto para diagonal
+                    penalidade = penalidade + 1
+                # movimento reto                      e movimento anterior era também reto o                novo movimento tem que ser diferente do anterior
+                elif (abs(dx) + abs(dy) == 1) and (abs(direcao_anterior[0]) + abs(direcao_anterior[1] == 1)) and (dx != direcao_anterior[0] or dy != direcao_anterior[1]) :
+                    penalidade = penalidade + 3
+
+                if tem_bola == True:
+                    penalidade = penalidade*2
+
+            g = g + penalidade # Soma a penalidade
+            h = math.hypot(x_objetivo - nx, y_objetivo - ny) #Distancia até o objetivo
+            f = g + h #Algoritmo A*
+
+            #Substitui o melhor o novo melhor caminho
+            if f < melhor_f:
+                melhor_f = f
+                melhor_passo = (nx, ny)
+                nova_direcao = (dx, dy)
+
+        direcao_anterior = nova_direcao
+        if melhor_passo is None:
+            return []
+
+        x_atual, y_atual = melhor_passo
+        caminho.append(melhor_passo)
+
+    return caminho
 
     # O código abaixo é um EXEMPLO SIMPLES de um robô que apenas anda para frente.
     # Ele NÃO desvia de obstáculos e NÃO busca o objetivo.
     # Sua tarefa é substituir esta lógica simples pelo seu algoritmo A* completo.
 
-    print("Usando a função de exemplo: robô andando para frente.")
+    # print("Usando a função de exemplo: robô andando para frente.")
     
-    caminho_exemplo = []
-    x_atual, y_atual = pos_inicial
+    # caminho_exemplo = []
+    # x_atual, y_atual = pos_inicial
 
-    # Gera um caminho de até 10 passos para a direita (considerado "frente" no campo)
-    for i in range(1, 11):
-        proximo_x = x_atual + i
+    # # Gera um caminho de até 10 passos para a direita (considerado "frente" no campo)
+    # for i in range(1, 11):
+    #     proximo_x = x_atual + i
         
-        # Garante que o robô não tente andar para fora dos limites do campo
-        if proximo_x < largura_grid:
-            caminho_exemplo.append((proximo_x, y_atual))
-        else:
-            # Para o loop se o robô chegar na borda do campo
-            break
+    #     # Garante que o robô não tente andar para fora dos limites do campo
+    #     if proximo_x < largura_grid:
+    #         caminho_exemplo.append((proximo_x, y_atual))
+    #     else:
+    #         # Para o loop se o robô chegar na borda do campo
+    #         break
 
-    # Retorna o caminho
-    return caminho_exemplo
+    # # Retorna o caminho
+    # return caminho_exemplo
